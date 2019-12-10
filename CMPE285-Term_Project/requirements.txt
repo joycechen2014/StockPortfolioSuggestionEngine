@@ -1,0 +1,5 @@
+Flask
+pandas-datareader
+fix-yahoo-finance
+matplotlib
+sqlalchemy
