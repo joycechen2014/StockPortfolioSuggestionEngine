@@ -15,19 +15,19 @@ app.secret_key = b'Stock Portfolio Suggestion Engine'
 # prepare data
 strategies = {
     'e_invest': ['apple', 'adobe', 'nestle'],
-    'g_invest': ['amazon', 'netflix', 'tesla'],
+    'g_invest': ['vertex', 'netflix', 'tesla'],
     'i_invest': ['vanguard', 'ishares1', 'ishares2'],
-    'q_invest': ['general_electric', 'home_depot', 'mcdonalds'],
-    'v_invest': ['johnson', 'blizzard', 'disney']
+    'q_invest': ['general_electric', 'nike', 'disney'],
+    'v_invest': ['magna', 'toll', 'vornando']
 }
 stock_map = {
     'apple': {'name': 'Apple Inc.', 'ticker': 'aapl', 'percent': 25, 'strategy': 'Ethical Investing'},
-    'adobe': {'name': 'Adobe Systems Incorporated', 'ticker': 'adbe', 'percent': 25, 'strategy': 'Ethical Investing'},
-    'nestle': {'name': 'Nestle SA (ADR)', 'ticker': 'nsrgy', 'percent': 50, 'strategy': 'Ethical Investing'},
+    'adobe': {'name': 'Adobe Systems Incorporated', 'ticker': 'adbe', 'percent': 50, 'strategy': 'Ethical Investing'},
+    'nestle': {'name': 'Nestle SA (ADR)', 'ticker': 'nsrgy', 'percent': 25, 'strategy': 'Ethical Investing'},
 
-    'amazon': {'name': 'Amazon.com Inc.', 'ticker': 'amzn', 'percent': 25, 'strategy': 'Growth Investing'},
-    'netflix': {'name': 'Netflix Inc.', 'ticker': 'nflx', 'percent': 25, 'strategy': 'Growth Investing'},
-    'tesla': {'name': 'Tesla Inc.', 'ticker': 'tsla', 'percent': 50, 'strategy': 'Growth Investing'},
+    'vertex': {'name': 'Vertex Pharmaceuticals Incorporated', 'ticker': 'vrtx', 'percent': 30, 'strategy': 'Growth Investing'},
+    'netflix': {'name': 'Netflix Inc.', 'ticker': 'nflx', 'percent': 30, 'strategy': 'Growth Investing'},
+    'tesla': {'name': 'Tesla Inc.', 'ticker': 'tsla', 'percent': 40, 'strategy': 'Growth Investing'},
 
     'vanguard':
         {'name': 'Vanguard Total Stock Market ETF', 'ticker': 'vti', 'percent': 34, 'strategy': 'Index Investing'},
@@ -36,14 +36,13 @@ stock_map = {
     'ishares2':
         {'name': 'iShares Core 10+ Year USD Bond', 'ticker': 'iltb', 'percent': 33, 'strategy': 'Index Investing'},
 
-    'general_electric':
-        {'name': 'General Electric Company', 'ticker': 'ge', 'percent': 40, 'strategy': 'Quality Investing'},
-    'home_depot': {'name': 'Home Depot Inc.', 'ticker': 'hd', 'percent': 20, 'strategy': 'Quality Investing'},
-    'mcdonalds': {'name': 'McDonald\'s Corporation', 'ticker': 'mcd', 'percent': 40, 'strategy': 'Quality Investing'},
+    'general_electric':{'name': 'General Electric Company', 'ticker': 'ge', 'percent': 20, 'strategy': 'Quality Investing'},
+    'nike': {'name': 'Nike Inc.', 'ticker': 'nke', 'percent': 20, 'strategy': 'Quality Investing'},
+    'disney': {'name': 'Walt Disney Co.', 'ticker': 'dis', 'percent': 60, 'strategy': 'Quality Investing'},
 
-    'johnson': {'name': 'Johnson & Johnson', 'ticker': 'jnj', 'percent': 40, 'strategy': 'Value Investing'},
-    'blizzard': {'name': 'Activision Blizzard Inc.', 'ticker': 'atvi', 'percent': 20, 'strategy': 'Value Investing'},
-    'disney': {'name': 'Walt Disney Co.', 'ticker': 'dis', 'percent': 40, 'strategy': 'Value Investing'}
+    'magna': {'name': 'Magna International', 'ticker': 'mga', 'percent': 30, 'strategy': 'Value Investing'},
+    'toll': {'name': 'Toll Brothers', 'ticker': 'tol', 'percent': 30, 'strategy': 'Value Investing'},
+    'vornando': {'name': 'Vornado Realty Trust', 'ticker': 'vno', 'percent': 40, 'strategy': 'Value Investing'}
 }
 
 # set up database
@@ -179,7 +178,7 @@ def process():
                     'low': row.Low,
                     'close': row.Close,
                     'volume': row.Volume,
-                    'adj_close': row._5,
+                    'adj_close': row._1,
                 })
         except Exception:
             # May occur a ValueError: zero-size array to reduction operation maximum which has no identity
