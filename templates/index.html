@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="A Python Based Stock Portfolio Suggestion Application.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <title>Stock Portfolio Suggestion Application</title>
+
+    <!-- Page styles -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.min.css">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.10.19/css/dataTables.material.min.css" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='css/nouislider.css') }}" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.3.1.js" type="text/javascript"></script>
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.material.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='js/nouislider.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='js/wNumb.js') }}" type="text/javascript"></script>
+</head>
+<body>
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+
+    <div class="android-header mdl-layout__header mdl-layout__header--waterfall">
+        <div class="mdl-layout__header-row">
+          <span class="android-title mdl-layout-title">
+            Stock Portfolio Suggestion Engine
+          </span>
+        </div>
+    </div>
+
+    <div class="android-content mdl-layout__content">
+
+        <div class="mdl-grid">
+            <div class="mdl-cell mdl-cell--3-col">
+                <form action="/" method="post">
+                    <div class="mdl-card mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            {# Message #}
+                            {% with messages = get_flashed_messages() %}
+                                {% if messages %}
+                                    <div class="mdl-grid error-message">
+                                        <div class="mdl-cell mdl-cell--12-col">
+                                            <h6>Please fix the following error(s)</h6>
+                                        </div>
+                                        <div class="mdl-cell mdl-cell--12-col">
+                                            <ul class="mdl-list">
+                                                {% for message in messages %}
+                                                    <li class="mdl-list__item">
+                                                        <span class="mdl-list__item-primary-content">{{ message }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                            {# /Message #}
+                            {# User Input #}
+                            <div class="mdl-grid">
+                                <div class="mdl-cell mdl-cell--6-col">
+                                    <div class="mdl-textfield mdl-js-textfield">
+                                        <input class="mdl-textfield__input" type="number" pattern="-?[0-9]*(\.[0-9]+)?"
+                                               id="invest_amt" name="invest_amt" min="5000" step=".01"
+                                               required>
+                                        <label class="mdl-textfield__label" for="invest_amt">Input Your Money</label>
+                                        <span class="mdl-textfield__error">Required</span>
+                                    </div>
+                                </div>
+                                <div class="mdl-cell mdl-cell--6-col">
+                                    <div class="mdl-textfield mdl-js-textfield">
+                                        <input class="mdl-textfield__input" type="number" id="days"
+                                               name="days" min="0" max="588" step="1">
+                                        <label class="mdl-textfield__label" for="days">Business Days to
+                                            Look Back...</label>
+                                        <span class="mdl-textfield__error">required</span>
+                                    </div>
+                                </div>
+                            </div>
+                                {# /User Input #}
+                                <div class="mdl-grid">
+                                    <div class="mdl-cell mdl-cell--12-col">
+                                        <h5>Please select 1 or 2 strategies:</h5>
+                                    </div>
+                                </div>
+                                {# Five Investings #}
+                                <div id="invest_group" class="mdl-grid">
+                                    <div class="mdl-cell mdl-cell--12-col">
+                                        <div class="mdl-textfield mdl-js-textfield">
+                                            <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+                                                   for="e_invest">
+                                                <input id="e_invest" name="e_invest" type="checkbox"
+                                                       class="mdl-checkbox__input">
+                                                <span class="mdl-checkbox__label">Ethical Investing</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mdl-cell mdl-cell--12-col">
+                                        <div class="mdl-textfield mdl-js-textfield">
+                                            <label for="g_invest"
+                                                   class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                                                <input id="g_invest" name="g_invest" type="checkbox"
+                                                       class="mdl-checkbox__input">
+                                                <span class="mdl-checkbox__label">Growth Investing</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mdl-cell mdl-cell--12-col">
+                                        <div class="mdl-textfield mdl-js-textfield">
+                                            <label for="i_invest"
+                                                   class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                                                <input id="i_invest" name="i_invest" type="checkbox"
+                                                       class="mdl-checkbox__input">
+                                                <span class="mdl-checkbox__label">Index Investing</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mdl-cell mdl-cell--12-col">
+                                        <div class="mdl-textfield mdl-js-textfield">
+                                            <label for="q_invest"
+                                                   class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                                                <input id="q_invest" name="q_invest" type="checkbox"
+                                                       class="mdl-checkbox__input">
+                                                <span class="mdl-checkbox__label">Quality Investing</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mdl-cell mdl-cell--12-col">
+                                        <div class="mdl-textfield mdl-js-textfield">
+                                            <label for="v_invest"
+                                                   class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                                                <input id="v_invest" name="v_invest" type="checkbox"
+                                                       class="mdl-checkbox__input">
+                                                <span class="mdl-checkbox__label">Value Investing</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {# /Five Investings #}
+                                {# Slider #}
+                                <div id="slider-group" class="mdl-grid" style="display: none;">
+                                    <div class="mdl-cell mdl-cell--5-col">
+                                        <div class="slider-field">
+                                            <div id="percent-slider"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mdl-cell mdl-cell--1-col"></div>
+                                    <div class="mdl-cell mdl-cell--2-col">
+                                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                                            <input id="first_invest" name="first_invest"
+                                                   style="display: none;"
+                                                   type="text" value="e_invest" required>
+                                            <input id="first_percent" name="first_percent"
+                                                   class="mdl-textfield__input" type="text"
+                                                   value="50.00 %" required>
+                                            <label for="first_percent" class="mdl-textfield__label">First
+                                                Investing</label>
+                                            <span class="mdl-textfield__error">Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="mdl-cell mdl-cell--2-col">
+                                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                                            <input id="second_invest" name="second_invest"
+                                                   style="display: none;"
+                                                   type="text" value="g_invest" required>
+                                            <input id="second_percent" name="second_percent"
+                                                   class="mdl-textfield__input" type="text"
+                                                   value="50.00 %" required>
+                                            <label for="second_percent" class="mdl-textfield__label">Second
+                                                Investing</label>
+                                            <span class="mdl-textfield__error">Required</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {# /Slider #}
+                                {# Progress #}
+                                <div class="mdl-grid">
+                                    <div class="mdl-cell mdl-cell--10-col">
+                                        <div id="progress"
+                                             class="mdl-progress mdl-js-progress mdl-progress__indeterminate"
+                                             style="width: 100%;display: none;"></div>
+                                    </div>
+                                </div>
+                                {# /Progress #}
+                            </div>
+                            <div class="mdl-card__actions mdl-card--border">
+                                <button type="submit"
+                                        class="mdl-button mdl-js-button mdl-button--raised">
+                                    Submit
+                                </button>
+                                <button type="reset" id="reset"
+                                        class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                </form>
+            </div>
+
+
+            <div class="mdl-cell mdl-cell--8-col">
+                <div class="layout-light mdl-layout mdl-js-layout">
+                    <main class="mdl-layout__content">
+                        <div class="mdl-grid">
+                            <div class="mdl-card mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-shadow--2dp">
+                                <div class="mdl-card__title">
+                                    {% if nav == 'history' %}
+                                        <h1 class="mdl-card__title-text">History Data</h1>
+                                    {% else %}
+                                        <h1 class="mdl-card__title-text">Result Based on Submission</h1>
+                                    {% endif %}
+                                </div>
+                                <div class="mdl-card__supporting-text">
+                                    {# Chart #}
+                                    <canvas id="history"></canvas>
+                                    {# /Chart #}
+                                </div>
+                            </div>
+
+
+                            <div class="mdl-card mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-shadow--2dp">
+                                <div class="mdl-card__title">
+                                    <h1 class="mdl-card__title-text">Assigned Stock</h1>
+                                </div>
+                                <div class="mdl-card__supporting-text">
+                                    <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                                        <tr>
+                                            <th class="mdl-data-table__cell--non-numeric">Stock</th>
+                                            <th>Current Price</th>
+                                            <th>Distribution</th>
+                                            <th class="mdl-data-table__cell--non-numeric">Strategy</th>
+                                        </tr>
+                                        {% for stock in data %}
+                                            <tr>
+                                                <td class="mdl-data-table__cell--non-numeric">{{ stock }}</td>
+                                                <td>$ {{ '{:.2f}'.format(data[stock][-1]['close']) }}</td>
+                                                <td>{{ '{:.2f}'.format(purchase_now[stock]['distribution']) }} %</td>
+                                                <td class="mdl-data-table__cell--non-numeric">{{ purchase_now[stock]['strategy'] }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <div class="mdl-grid">
+                            <div class="mdl-card mdl-cell mdl-cell--8-col mdl-cell--8-col-tablet mdl-shadow--2dp">
+                                <div class="mdl-card__title">
+                                    <h1 class="mdl-card__title-text">
+                                        If purchase today with $ {{ '{:.2f}'.format(amount) }}
+                                    </h1>
+                                </div>
+                                <div class="mdl-card__supporting-text">
+                                    {# Table #}
+                                    <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width:100%">
+                                        <tr>
+                                            <th class="mdl-data-table__cell--non-numeric">Stock</th>
+                                            <th>Distribution</th>
+                                            <th>Amount Distributed</th>
+                                            <th>Share Purchased</th>
+                                            <th>Current Price</th>
+                                        </tr>
+                                        {% for stock in purchase_now %}
+                                            <tr>
+                                                <td class="mdl-data-table__cell--non-numeric">{{ stock }}</td>
+                                                <td>{{ '{:.2f}'.format(purchase_now[stock]['distribution']) }} %</td>
+                                                <td>
+                                                    $ {{ '{:.2f}'.format(purchase_now[stock]['amt_dist']) }}</td>
+                                                <td>{{ purchase_now[stock]['share'] }}</td>
+                                                <td>$ {{ '{:.2f}'.format(data[stock][-1]['close']) }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        <tr>
+                                            <th colspan="4">Total Value</th>
+                                            <td>$ {{ '{:.2f}'.format(total_now) }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                        {% for day in look_back %}
+                            <div class="mdl-grid">
+                                <div class="mdl-card mdl-cell mdl-cell--8-col mdl-cell--8-col-tablet mdl-shadow--2dp">
+                                    <div class="mdl-card__title">
+                                        <h1 class="mdl-card__title-text">
+                                            If purchased {{ day }} business days ago with
+                                            $ {{ '{:.2f}'.format(amount) }}
+                                        </h1>
+                                    </div>
+                                    <div class="mdl-card__supporting-text">
+                                        <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp"
+                                               style="width:100%">
+                                            <tr>
+                                                <th class="mdl-data-table__cell--non-numeric">Stock</th>
+                                                <th>Purchase Price</th>
+                                                <th>Distribution</th>
+                                                <th>Amount Distributed</th>
+                                                <th>Share Purchased</th>
+                                                <th>Current Price</th>
+                                                <th>Current Value</th>
+                                            </tr>
+                                            {% for stock in purchase[day] %}
+                                                <tr>
+                                                    <td class="mdl-data-table__cell--non-numeric">{{ stock }}</td>
+                                                    <td>{{ '{:.2f}'.format(purchase[day][stock]['old_price']) }}</td>
+                                                    <td>{{ '{:.2f}'.format(purchase[day][stock]['distribution']) }} %
+                                                    </td>
+                                                    <td>
+                                                        $ {{ '{:.2f}'.format(purchase[day][stock]['amt_dist']) }}</td>
+                                                    <td>{{ purchase[day][stock]['share'] }}</td>
+                                                    <td>
+                                                        $ {{ '{:.2f}'.format(purchase[day][stock]['cur_price']) }}</td>
+                                                    <td>
+                                                        $ {{ '{:.2f}'.format(purchase[day][stock]['cur_value']) }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            <tr>
+                                                <td colspan="6">Total Value</td>
+                                                <td>$ {{ '{:.2f}'.format(total[day]) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="6">Total Gain/Loss</td>
+                                                <td>$ {{ '{:.2f}'.format(profit[day]) }}
+                                                    ({{ '{:.2f}'.format(percent[day]) }} %)
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                        {% endfor %}
+
+                    </main>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+    <footer class="android-footer mdl-mega-footer">
+        <div class="mdl-mega-footer--middle-section">
+            <h6 class="mdl-typography--font-light">© 2019 Team Choi</h6>
+        </div>
+
+    </footer>
+</div>
+<script type="text/javascript">
+    // reset trigger
+    $('#reset').click(function () {
+        $('.mdl-checkbox.is-checked').removeClass('is-checked');
+        $('#slider-group').fadeOut();
+        $('#first_percent').val('50.00 %').trigger('change');
+        $('#invest_group input[type=checkbox]').attr('disabled', false).each(function () {
+            $('#invest_group label[for="' + this.id + '"]').removeClass('is-disabled');
+        });
+    });
+
+    $(window).on('load', function () {
+        var config = {
+            type: 'line',
+            data: {
+                labels: ['{{ x|join('\',\'')|safe }}'],
+                datasets: [{
+                    data: [{{ y|join(',') }}],
+                    borderColor: 'rgb(63, 81, 181)',
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: false
+                },
+                tooltips: {
+                    mode: 'near'
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Look back days'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Portfolio total value (USD)'
+                        },
+                    }]
+                }
+            }
+        };
+        var ctx = $('#history')[0].getContext('2d');
+        window.historyChart = new Chart(ctx, config);
+    });
+</script>
+</body>
+</html>

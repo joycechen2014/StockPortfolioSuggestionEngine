@@ -1,9 +1,9 @@
 from flask import Flask, flash, render_template, request, redirect, url_for, session
-import datetime, pytz, time
-import os.path, json
 from pandas_datareader import data as pdr
 import yfinance as yf
 from sqlalchemy import *
+import datetime, pytz, time
+import os.path, json
 
 # fix yahoo
 yf.pdr_override()
@@ -15,19 +15,19 @@ app.secret_key = b'Stock Portfolio Suggestion Engine'
 # prepare data
 strategies = {
     'e_invest': ['apple', 'adobe', 'nestle'],
-    'g_invest': ['vertex', 'netflix', 'tesla'],
+    'g_invest': ['amazon', 'netflix', 'tesla'],
     'i_invest': ['vanguard', 'ishares1', 'ishares2'],
-    'q_invest': ['general_electric', 'nike', 'disney'],
-    'v_invest': ['magna', 'toll', 'vornando']
+    'q_invest': ['general_electric', 'home_depot', 'mcdonalds'],
+    'v_invest': ['johnson', 'blizzard', 'disney']
 }
 stock_map = {
     'apple': {'name': 'Apple Inc.', 'ticker': 'aapl', 'percent': 25, 'strategy': 'Ethical Investing'},
-    'adobe': {'name': 'Adobe Systems Incorporated', 'ticker': 'adbe', 'percent': 50, 'strategy': 'Ethical Investing'},
-    'nestle': {'name': 'Nestle SA (ADR)', 'ticker': 'nsrgy', 'percent': 25, 'strategy': 'Ethical Investing'},
+    'adobe': {'name': 'Adobe Systems Incorporated', 'ticker': 'adbe', 'percent': 25, 'strategy': 'Ethical Investing'},
+    'nestle': {'name': 'Nestle SA (ADR)', 'ticker': 'nsrgy', 'percent': 50, 'strategy': 'Ethical Investing'},
 
-    'vertex': {'name': 'Vertex Pharmaceuticals Incorporated', 'ticker': 'vrtx', 'percent': 30, 'strategy': 'Growth Investing'},
-    'netflix': {'name': 'Netflix Inc.', 'ticker': 'nflx', 'percent': 30, 'strategy': 'Growth Investing'},
-    'tesla': {'name': 'Tesla Inc.', 'ticker': 'tsla', 'percent': 40, 'strategy': 'Growth Investing'},
+    'amazon': {'name': 'Amazon.com Inc.', 'ticker': 'amzn', 'percent': 25, 'strategy': 'Growth Investing'},
+    'netflix': {'name': 'Netflix Inc.', 'ticker': 'nflx', 'percent': 25, 'strategy': 'Growth Investing'},
+    'tesla': {'name': 'Tesla Inc.', 'ticker': 'tsla', 'percent': 50, 'strategy': 'Growth Investing'},
 
     'vanguard':
         {'name': 'Vanguard Total Stock Market ETF', 'ticker': 'vti', 'percent': 34, 'strategy': 'Index Investing'},
@@ -36,13 +36,14 @@ stock_map = {
     'ishares2':
         {'name': 'iShares Core 10+ Year USD Bond', 'ticker': 'iltb', 'percent': 33, 'strategy': 'Index Investing'},
 
-    'general_electric':{'name': 'General Electric Company', 'ticker': 'ge', 'percent': 20, 'strategy': 'Quality Investing'},
-    'nike': {'name': 'Nike Inc.', 'ticker': 'nke', 'percent': 20, 'strategy': 'Quality Investing'},
-    'disney': {'name': 'Walt Disney Co.', 'ticker': 'dis', 'percent': 60, 'strategy': 'Quality Investing'},
+    'general_electric':
+        {'name': 'General Electric Company', 'ticker': 'ge', 'percent': 40, 'strategy': 'Quality Investing'},
+    'home_depot': {'name': 'Home Depot Inc.', 'ticker': 'hd', 'percent': 20, 'strategy': 'Quality Investing'},
+    'mcdonalds': {'name': 'McDonald\'s Corporation', 'ticker': 'mcd', 'percent': 40, 'strategy': 'Quality Investing'},
 
-    'magna': {'name': 'Magna International', 'ticker': 'mga', 'percent': 30, 'strategy': 'Value Investing'},
-    'toll': {'name': 'Toll Brothers', 'ticker': 'tol', 'percent': 30, 'strategy': 'Value Investing'},
-    'vornando': {'name': 'Vornado Realty Trust', 'ticker': 'vno', 'percent': 40, 'strategy': 'Value Investing'}
+    'johnson': {'name': 'Johnson & Johnson', 'ticker': 'jnj', 'percent': 40, 'strategy': 'Value Investing'},
+    'blizzard': {'name': 'Activision Blizzard Inc.', 'ticker': 'atvi', 'percent': 20, 'strategy': 'Value Investing'},
+    'disney': {'name': 'Walt Disney Co.', 'ticker': 'dis', 'percent': 40, 'strategy': 'Value Investing'}
 }
 
 # set up database
@@ -64,11 +65,44 @@ metadata.create_all(engine)
 
 @app.route('/')
 def index():
-    return render_template('index.html', strategies=strategies, stock_map=stock_map,
-                           has_past=os.path.isfile('history.json'))
+    x = []
+    y = []
+    if os.path.isfile('history.json'):
+        with open('history.json') as f:
+            dumps_data = json.load(f)
+            amount = dumps_data['amount']
+            data = dumps_data['data']
+            purchase_now = dumps_data['purchase_now']
+            total_now = dumps_data['total_now']
+            purchase = dumps_data['purchase']
+            total = dumps_data['total']
+            profit = dumps_data['profit']
+            percent = dumps_data['percent']
+            look_back = [str(x) for x in dumps_data['look_back']]
+            x = dumps_data['x']
+            y = dumps_data['y']
+
+        return render_template('index.html',
+                               strategies=strategies, stock_map=stock_map,
+                               amount=amount,
+                               data=data,
+                               purchase_now=purchase_now,
+                               total_now=total_now,
+                               look_back=look_back,
+                               purchase=purchase,
+                               total=total,
+                               profit=profit,
+                               percent=percent,
+                               x=x,
+                               y=y,
+                               nav='history')
+    else:
+        flash('There is no history data', 'error')
+        return render_template('index.html', strategies=strategies, stock_map=stock_map,
+                               has_past=os.path.isfile('history.json'))
 
 
-@app.route('/process', methods=['POST'])
+@app.route('/', methods=['POST'])
 def process():
     inputs = {}
     selected = {}
@@ -138,7 +172,6 @@ def process():
         try:
             download_data = pdr.get_data_yahoo(stock_name, start=start_date, end=end_date)
             for row in download_data.itertuples(index=True, name='Pandas'):
-                print(row)
                 data[key].append({
                     # 'date': row.Index,
                     'open': row.Open,
@@ -146,9 +179,8 @@ def process():
                     'low': row.Low,
                     'close': row.Close,
                     'volume': row.Volume,
-                    'adj_close': row._1,
+                    'adj_close': row._5,
                 })
-                print("test4")
         except Exception:
             # May occur a ValueError: zero-size array to reduction operation maximum which has no identity
             _flashes = session.get('_flashes', [])
@@ -233,7 +265,7 @@ def process():
     with open('history.json', 'w+') as f:
         json.dump(dumps_data, f)
 
-    return render_template('result.html',
+    return render_template('index.html',
                            amount=amount,
                            data=data,
                            purchase_now=purchase_now,
@@ -278,52 +310,6 @@ def readOffline(stock):
                             Column('Volume', BIGINT)
                             )
     return stock_db[stock].select().execute()
-
-
-@app.route('/history', methods=['GET'])
-def history():
-    amount = 0
-    data = {}
-    purchase_now = {}
-    total_now = 0
-    purchase = {}
-    total = {}
-    profit = {}
-    percent = {}
-    look_back = []
-    x = []
-    y = []
-    if os.path.isfile('history.json'):
-        with open('history.json') as f:
-            dumps_data = json.load(f)
-            amount = dumps_data['amount']
-            data = dumps_data['data']
-            purchase_now = dumps_data['purchase_now']
-            total_now = dumps_data['total_now']
-            purchase = dumps_data['purchase']
-            total = dumps_data['total']
-            profit = dumps_data['profit']
-            percent = dumps_data['percent']
-            look_back = [str(x) for x in dumps_data['look_back']]
-            x = dumps_data['x']
-            y = dumps_data['y']
-
-        return render_template('result.html',
-                               amount=amount,
-                               data=data,
-                               purchase_now=purchase_now,
-                               total_now=total_now,
-                               look_back=look_back,
-                               purchase=purchase,
-                               total=total,
-                               profit=profit,
-                               percent=percent,
-                               x=x,
-                               y=y,
-                               nav='history')
-    else:
-        flash('There is no history data', 'error')
-        return redirect(url_for('index'))
 
 
 @app.errorhandler(404)
